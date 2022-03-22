@@ -1,13 +1,13 @@
 Sphinx>=1.4.3
 sphinx-rtd-theme
-setuptools
-docutils
-paddlepaddle
 numpy
 scipy
+setuptools
+docutils
 resampy
 soundfile
 colorlog
 dtaidistance
 mcd
 librosa
+paddlepaddle
