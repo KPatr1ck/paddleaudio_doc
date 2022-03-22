@@ -7,5 +7,4 @@ docutils
 resampy
 soundfile
 colorlog
-librosa
 paddlepaddle
