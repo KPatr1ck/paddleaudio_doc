@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paddleaudio.functional.window &mdash; PaddleAudio 0.2.0 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PaddleAudio<img src="../../../_static/paddle.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../paddleaudio.html">paddleaudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PaddleAudio</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>paddleaudio.functional.window</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paddleaudio.functional.window</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">paddle</span>
+<span class="kn">from</span> <span class="nn">paddle</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;get_window&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_cat</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">data_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">paddle</span><span class="o">.</span><span class="n">to_tensor</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_acosh</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">paddle</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">paddle</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Extend window by 1 sample if needed for DFT-even symmetry. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sym</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">M</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">M</span><span class="p">,</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Handle small or incorrect window lengths. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">M</span><span class="p">)</span> <span class="o">!=</span> <span class="n">M</span> <span class="ow">or</span> <span class="n">M</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Window length M must be a non-negative integer&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">M</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">needed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Truncate window by 1 sample if needed for DFT-even symmetry. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">needed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">w</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">w</span>
+
+
+<span class="k">def</span> <span class="nf">_general_gaussian</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a window with a generalized Gaussian shape.</span>
+<span class="sd">    This function is consistent with scipy.signal.windows.general_gaussian().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="n">sig</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_general_cosine</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a generic weighted sum of cosine terms window.</span>
+<span class="sd">    This function is consistent with scipy.signal.windows.general_cosine().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+    <span class="n">fac</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)):</span>
+        <span class="n">w</span> <span class="o">+=</span> <span class="n">a</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_general_hamming</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a generalized Hamming window.</span>
+<span class="sd">    This function is consistent with scipy.signal.windows.general_hamming()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_general_cosine</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">],</span> <span class="n">sym</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_taylor</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">nbar</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">sll</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+            <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Taylor window.</span>
+<span class="sd">    The Taylor window taper function approximates the Dolph-Chebyshev window&#39;s</span>
+<span class="sd">    constant sidelobe level for a parameterized number of near-in sidelobes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+    <span class="c1"># Original text uses a negative sidelobe level parameter and then negates</span>
+    <span class="c1"># it in the calculation of B. To keep consistent with other methods we</span>
+    <span class="c1"># assume the sidelobe level parameter to be positive.</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">sll</span> <span class="o">/</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">_acosh</span><span class="p">(</span><span class="n">B</span><span class="p">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">nbar</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">nbar</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ma</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nbar</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">Fm</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nbar</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">signs</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">ma</span><span class="p">)</span>
+    <span class="n">signs</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">signs</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">ma</span> <span class="o">*</span> <span class="n">ma</span>
+    <span class="k">for</span> <span class="n">mi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ma</span><span class="p">)):</span>
+        <span class="n">numer</span> <span class="o">=</span> <span class="n">signs</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">/</span> <span class="n">s2</span> <span class="o">/</span> <span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">ma</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+                                                           <span class="p">))</span>
+        <span class="k">if</span> <span class="n">mi</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">/</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:])</span>
+        <span class="k">elif</span> <span class="n">mi</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ma</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">/</span> <span class="n">m2</span><span class="p">[:</span><span class="n">mi</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">/</span> <span class="n">m2</span><span class="p">[:</span><span class="n">mi</span><span class="p">])</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">[</span>
+                <span class="n">mi</span><span class="p">]</span> <span class="o">/</span> <span class="n">m2</span><span class="p">[</span><span class="n">mi</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:])</span>
+
+        <span class="n">Fm</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">=</span> <span class="n">numer</span> <span class="o">/</span> <span class="n">denom</span>
+
+    <span class="k">def</span> <span class="nf">W</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">Fm</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ma</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">M</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="n">M</span><span class="p">))</span>
+
+    <span class="n">w</span> <span class="o">=</span> <span class="n">W</span><span class="p">(</span><span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span>
+
+    <span class="c1"># normalize (Note that this is not described in the original text [1])</span>
+    <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">W</span><span class="p">((</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">*=</span> <span class="n">scale</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_hamming</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Hamming window.</span>
+<span class="sd">    The Hamming window is a taper formed by using a raised cosine with</span>
+<span class="sd">    non-zero endpoints, optimized to minimize the nearest side lobe.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_general_hamming</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="mf">0.54</span><span class="p">,</span> <span class="n">sym</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_hann</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Hann window.</span>
+<span class="sd">    The Hann window is a taper formed by using a raised cosine or sine-squared</span>
+<span class="sd">    with ends that touch zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_general_hamming</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">sym</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_tukey</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Tukey window.</span>
+<span class="sd">    The Tukey window is also known as a tapered cosine window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">alpha</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hann</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="o">=</span><span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">n1</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">n2</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">M</span> <span class="o">-</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">n3</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="n">M</span> <span class="o">-</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:]</span>
+
+    <span class="n">w1</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">n1</span> <span class="o">/</span> <span class="n">alpha</span> <span class="o">/</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n2</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">w3</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">alpha</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">n3</span> <span class="o">/</span> <span class="n">alpha</span> <span class="o">/</span>
+                                          <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">w1</span><span class="p">,</span> <span class="n">w2</span><span class="p">,</span> <span class="n">w3</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_kaiser</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Kaiser window.</span>
+<span class="sd">    The Kaiser window is a taper formed by using a Bessel function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_gaussian</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Gaussian window.</span>
+<span class="sd">    The Gaussian widows has a Gaussian shape defined by the standard deviation(std).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">sig2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">std</span> <span class="o">*</span> <span class="n">std</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">n</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">sig2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_exponential</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tau</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                 <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute an exponential (or Poisson) window. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sym</span> <span class="ow">and</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If sym==True, center must be None.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">paddle</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_triang</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a triangular window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">M</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">M</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">M</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">w</span><span class="p">,</span> <span class="n">w</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">M</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">w</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_bohman</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Bohman window.</span>
+<span class="sd">    The Bohman window is the autocorrelation of a cosine window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+
+    <span class="n">fac</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">paddle</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">fac</span><span class="p">)</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span>
+        <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">_cat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_blackman</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a Blackman window.</span>
+<span class="sd">    The Blackman window is a taper formed by using the first three terms of</span>
+<span class="sd">    a summation of cosines. It was designed to have close to the minimal</span>
+<span class="sd">    leakage possible.  It is close to optimal, only slightly worse than a</span>
+<span class="sd">    Kaiser window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_general_cosine</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.42</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">],</span> <span class="n">sym</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_cosine</span><span class="p">(</span><span class="n">M</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute a window with a simple cosine shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_len_guards</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">M</span><span class="p">,</span> <span class="n">needs_trunc</span> <span class="o">=</span> <span class="n">_extend</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">sym</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">M</span> <span class="o">*</span> <span class="p">(</span><span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">_truncate</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">needs_trunc</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_window"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.window.get_window">[docs]</a><span class="k">def</span> <span class="nf">get_window</span><span class="p">(</span><span class="n">window</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+               <span class="n">win_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+               <span class="n">fftbins</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return a window of a given length and type.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        window (Union[str, Tuple[str, float]]): The window function applied to the signal before the Fourier transform. Supported window functions: &#39;hamming&#39;, &#39;hann&#39;, &#39;kaiser&#39;, &#39;gaussian&#39;, &#39;exponential&#39;, &#39;triang&#39;, &#39;bohman&#39;, &#39;blackman&#39;, &#39;cosine&#39;, &#39;tukey&#39;, &#39;taylor&#39;.</span>
+<span class="sd">        win_length (int): Number of samples.</span>
+<span class="sd">        fftbins (bool, optional): If True, create a &quot;periodic&quot; window. Otherwise, create a &quot;symmetric&quot; window, for use in filter design. Defaults to True.</span>
+<span class="sd">        dtype (str, optional): The data type of the return window. Defaults to &#39;float64&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: The window represented as a tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sym</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">fftbins</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">winstr</span> <span class="o">=</span> <span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">window</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">window</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="s1">&#39;exponential&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The &#39;&quot;</span> <span class="o">+</span> <span class="n">window</span> <span class="o">+</span> <span class="s2">&quot;&#39; window needs one or &quot;</span>
+                             <span class="s2">&quot;more parameters -- pass a tuple.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">winstr</span> <span class="o">=</span> <span class="n">window</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> as window type is not supported.&quot;</span> <span class="o">%</span>
+                         <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">window</span><span class="p">)))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">winfunc</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">winstr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown window type.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">(</span><span class="n">win_length</span><span class="p">,</span> <span class="p">)</span> <span class="o">+</span> <span class="n">args</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sym&#39;</span><span class="p">:</span> <span class="n">sym</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">winfunc</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, PaddlePaddle.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

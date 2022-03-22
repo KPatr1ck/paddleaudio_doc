@@ -1,0 +1,7 @@
+paddleaudio.utils.time
+======================
+
+.. automodule:: paddleaudio.utils.time
+   :members:
+   :undoc-members:
+   :show-inheritance:

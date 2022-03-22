@@ -1,0 +1,7 @@
+paddleaudio.utils.error
+=======================
+
+.. automodule:: paddleaudio.utils.error
+   :members:
+   :undoc-members:
+   :show-inheritance:

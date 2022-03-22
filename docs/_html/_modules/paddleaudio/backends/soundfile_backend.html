@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paddleaudio.backends.soundfile_backend &mdash; PaddleAudio 0.2.0 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PaddleAudio<img src="../../../_static/paddle.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../paddleaudio.html">paddleaudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PaddleAudio</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>paddleaudio.backends.soundfile_backend</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paddleaudio.backends.soundfile_backend</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">resampy</span>
+<span class="kn">import</span> <span class="nn">soundfile</span> <span class="k">as</span> <span class="nn">sf</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">wavfile</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">ParameterError</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;resample&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;to_mono&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;depth_convert&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;normalize&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;save&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;load&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">NORMALMIZE_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">]</span>
+<span class="n">MERGE_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ch0&#39;</span><span class="p">,</span> <span class="s1">&#39;ch1&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;average&#39;</span><span class="p">]</span>
+<span class="n">RESAMPLE_MODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;kaiser_best&#39;</span><span class="p">,</span> <span class="s1">&#39;kaiser_fast&#39;</span><span class="p">]</span>
+<span class="n">EPS</span> <span class="o">=</span> <span class="mf">1e-8</span>
+
+
+<div class="viewcode-block" id="resample"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.resample">[docs]</a><span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+             <span class="n">src_sr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+             <span class="n">target_sr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+             <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;kaiser_fast&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Audio resampling.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        src_sr (int): Source sample rate.</span>
+<span class="sd">        target_sr (int): Target sample rate.</span>
+<span class="sd">        mode (str, optional): The resampling filter to use. Defaults to &#39;kaiser_fast&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: `y` resampled to `target_sr`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;kaiser_best&#39;</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Using resampy in kaiser_best to </span><span class="si">{</span><span class="n">src_sr</span><span class="si">}</span><span class="s1">=&gt;</span><span class="si">{</span><span class="n">target_sr</span><span class="si">}</span><span class="s1">. This function is pretty slow, </span><span class="se">\</span>
+<span class="s1">        we recommend the mode kaiser_fast in large scale audio trainning&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="s1">&#39;Only support numpy np.ndarray, but received y in {type(y)}&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESAMPLE_MODES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;resample mode must in </span><span class="si">{</span><span class="n">RESAMPLE_MODES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">resampy</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">src_sr</span><span class="p">,</span> <span class="n">target_sr</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="to_mono"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.to_mono">[docs]</a><span class="k">def</span> <span class="nf">to_mono</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">merge_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;average&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Convert sterior audio to mono.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        merge_type (str, optional): Merge type to generate mono waveform. Defaults to &#39;average&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: `y` with mono channel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">merge_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MERGE_TYPES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Unsupported merge type </span><span class="si">{</span><span class="n">merge_type</span><span class="si">}</span><span class="s1">, available types are </span><span class="si">{</span><span class="n">MERGE_TYPES</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Unsupported audio array,  y.ndim &gt; 2, the shape is </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># nothing to merge</span>
+        <span class="k">return</span> <span class="n">y</span>
+
+    <span class="k">if</span> <span class="n">merge_type</span> <span class="o">==</span> <span class="s1">&#39;ch0&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">merge_type</span> <span class="o">==</span> <span class="s1">&#39;ch1&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">merge_type</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
+
+    <span class="c1"># need to do averaging according to dtype</span>
+
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;float32&#39;</span><span class="p">:</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="k">elif</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int16&#39;</span><span class="p">:</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int32&#39;</span><span class="p">)</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">y_out</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int8&#39;</span><span class="p">:</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">y_out</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unsupported dtype: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y_out</span></div>
+
+
+<span class="k">def</span> <span class="nf">_safe_cast</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Data type casting in a safe way, i.e., prevent overflow or underflow.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        dtype (Union[type, str]): Data type of waveform.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: `y` after safe casting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;float&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                       <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                       <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="depth_convert"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.depth_convert">[docs]</a><span class="k">def</span> <span class="nf">depth_convert</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Convert audio array to target dtype safely. This function convert audio waveform to a target dtype, with addition steps of</span>
+<span class="sd">    preventing overflow/underflow and preserving audio range.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        dtype (Union[type, str]): Data type of waveform.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: `y` after safe casting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORT_DTYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int8&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORT_DTYPE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="s1">&#39;Unsupported audio dtype, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;y.dtype is </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s1">, supported dtypes are </span><span class="si">{</span><span class="n">SUPPORT_DTYPE</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORT_DTYPE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="s1">&#39;Unsupported audio dtype, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;target dtype  is </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s1">, supported dtypes are </span><span class="si">{</span><span class="n">SUPPORT_DTYPE</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">y</span>
+
+    <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;float64&#39;</span> <span class="ow">and</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;float32&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_safe_cast</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;float32&#39;</span> <span class="ow">and</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;float64&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_safe_cast</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int16&#39;</span> <span class="ow">or</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int8&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">]:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int16&#39;</span> <span class="ow">and</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s1">&#39;int8&#39;</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span> <span class="o">-</span> <span class="n">EPS</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">factor</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># dtype == &#39;int8&#39; and y.dtype==&#39;int16&#39;:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int32&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span> <span class="o">/</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">]:</span>
+        <span class="n">org_dtype</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">org_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+<span class="k">def</span> <span class="nf">sound_file_load</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+                    <span class="n">offset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;int16&#39;</span><span class="p">,</span>
+                    <span class="n">duration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Load audio using soundfile library. This function load audio file using libsndfile.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file (os.PathLike): File of waveform.</span>
+<span class="sd">        offset (Optional[float], optional): Offset to the start of waveform. Defaults to None.</span>
+<span class="sd">        dtype (str, optional): Data type of waveform. Defaults to &#39;int16&#39;.</span>
+<span class="sd">        duration (Optional[int], optional): Duration of waveform to read. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[np.ndarray, int]: Waveform in ndarray and its samplerate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">sf</span><span class="o">.</span><span class="n">SoundFile</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">as</span> <span class="n">sf_desc</span><span class="p">:</span>
+        <span class="n">sr_native</span> <span class="o">=</span> <span class="n">sf_desc</span><span class="o">.</span><span class="n">samplerate</span>
+        <span class="k">if</span> <span class="n">offset</span><span class="p">:</span>
+            <span class="n">sf_desc</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">offset</span> <span class="o">*</span> <span class="n">sr_native</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">frame_duration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">sr_native</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">frame_duration</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">sf_desc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">frames</span><span class="o">=</span><span class="n">frame_duration</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">always_2d</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">sf_desc</span><span class="o">.</span><span class="n">samplerate</span>
+
+
+<div class="viewcode-block" id="normalize"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.normalize">[docs]</a><span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">norm_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+              <span class="n">mul_factor</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Normalize an input audio with additional multiplier.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        norm_type (str, optional): Type of normalization. Defaults to &#39;linear&#39;.</span>
+<span class="sd">        mul_factor (float, optional): Scaling factor. Defaults to 1.0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: `y` after normalization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">norm_type</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+        <span class="n">amax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">amax</span> <span class="o">+</span> <span class="n">EPS</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">*</span> <span class="n">factor</span> <span class="o">*</span> <span class="n">mul_factor</span>
+    <span class="k">elif</span> <span class="n">norm_type</span> <span class="o">==</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">:</span>
+        <span class="n">amean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">astd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">astd</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">astd</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">mul_factor</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">amean</span><span class="p">)</span> <span class="o">/</span> <span class="n">astd</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;norm_type should be in </span><span class="si">{</span><span class="n">NORMALMIZE_TYPES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+<div class="viewcode-block" id="save"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.save">[docs]</a><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Save audio file to disk. This function saves audio to disk using scipy.io.wavfile, with additional step to convert input waveform to int16.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): Input waveform array in 1D or 2D.</span>
+<span class="sd">        sr (int): Sample rate.</span>
+<span class="sd">        file (os.PathLike): Path of auido file to save.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.wav&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;only .wav file supported, but dst file name is: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sr</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Sample rate should be larger than 0, recieved sr = </span><span class="si">{</span><span class="n">sr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int8&#39;</span><span class="p">]:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;input data type is </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s1">, will convert data to int16 format before saving&#39;</span>
+        <span class="p">)</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">depth_convert</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="n">wavfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">y_out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../paddleaudio.backends.html#paddleaudio.backends.soundfile_backend.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+        <span class="n">sr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">mono</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">merge_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;average&#39;</span><span class="p">,</span>  <span class="c1"># ch0,ch1,random,average</span>
+        <span class="n">normal</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">norm_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+        <span class="n">norm_mul_factor</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">offset</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">duration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span>
+        <span class="n">resample_mode</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;kaiser_fast&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Load audio file from disk. This function loads audio from disk using using audio beackend.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file (os.PathLike): Path of auido file to load.</span>
+<span class="sd">        sr (Optional[int], optional): Sample rate of loaded waveform. Defaults to None.</span>
+<span class="sd">        mono (bool, optional): Return waveform with mono channel. Defaults to True.</span>
+<span class="sd">        merge_type (str, optional): Merge type of multi-channels waveform. Defaults to &#39;average&#39;.</span>
+<span class="sd">        normal (bool, optional): Waveform normalization. Defaults to True.</span>
+<span class="sd">        norm_type (str, optional): Type of normalization. Defaults to &#39;linear&#39;.</span>
+<span class="sd">        norm_mul_factor (float, optional): Scaling factor. Defaults to 1.0.</span>
+<span class="sd">        offset (float, optional): Offset to the start of waveform. Defaults to 0.0.</span>
+<span class="sd">        duration (Optional[int], optional): Duration of waveform to read. Defaults to None.</span>
+<span class="sd">        dtype (str, optional): Data type of waveform. Defaults to &#39;float32&#39;.</span>
+<span class="sd">        resample_mode (str, optional): The resampling filter to use. Defaults to &#39;kaiser_fast&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[np.ndarray, int]: Waveform in ndarray and its samplerate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">y</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">sound_file_load</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;audio file </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1"> looks empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mono</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">to_mono</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">merge_type</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sr</span> <span class="o">!=</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">resample_mode</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">sr</span>
+
+    <span class="k">if</span> <span class="n">normal</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">norm_type</span><span class="p">,</span> <span class="n">norm_mul_factor</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;int8&#39;</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">]:</span>
+        <span class="c1"># still need to do normalization, before depth convertion</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="n">depth_convert</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, PaddlePaddle.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+paddleaudio.utils.log
+=====================
+
+.. automodule:: paddleaudio.utils.log
+   :members:
+   :undoc-members:
+   :show-inheritance:

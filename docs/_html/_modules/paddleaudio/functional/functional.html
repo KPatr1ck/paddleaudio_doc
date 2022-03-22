@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paddleaudio.functional.functional &mdash; PaddleAudio 0.2.0 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PaddleAudio<img src="../../../_static/paddle.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../paddleaudio.html">paddleaudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PaddleAudio</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>paddleaudio.functional.functional</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paddleaudio.functional.functional</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># Modified from librosa(https://github.com/librosa/librosa)</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">paddle</span>
+<span class="kn">from</span> <span class="nn">paddle</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;hz_to_mel&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mel_to_hz&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mel_frequencies&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fft_frequencies&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;compute_fbank_matrix&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;power_to_db&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;create_dct&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="hz_to_mel"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.hz_to_mel">[docs]</a><span class="k">def</span> <span class="nf">hz_to_mel</span><span class="p">(</span><span class="n">freq</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+              <span class="n">htk</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert Hz to Mels.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        freq (Union[Tensor, float]): The input tensor with arbitrary shape.</span>
+<span class="sd">        htk (bool, optional): Use htk scaling. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[Tensor, float]: Frequency in mels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">htk</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">2595.0</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">freq</span> <span class="o">/</span> <span class="mf">700.0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">2595.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">freq</span> <span class="o">/</span> <span class="mf">700.0</span><span class="p">)</span>
+
+    <span class="c1"># Fill in the linear part</span>
+    <span class="n">f_min</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">f_sp</span> <span class="o">=</span> <span class="mf">200.0</span> <span class="o">/</span> <span class="mi">3</span>
+
+    <span class="n">mels</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq</span> <span class="o">-</span> <span class="n">f_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">f_sp</span>
+
+    <span class="c1"># Fill in the log-scale part</span>
+
+    <span class="n">min_log_hz</span> <span class="o">=</span> <span class="mf">1000.0</span>  <span class="c1"># beginning of log region (Hz)</span>
+    <span class="n">min_log_mel</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_log_hz</span> <span class="o">-</span> <span class="n">f_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">f_sp</span>  <span class="c1"># same (Mels)</span>
+    <span class="n">logstep</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">6.4</span><span class="p">)</span> <span class="o">/</span> <span class="mf">27.0</span>  <span class="c1"># step size for log region</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">min_log_mel</span> <span class="o">+</span> <span class="n">paddle</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">freq</span> <span class="o">/</span> <span class="n">min_log_hz</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="o">/</span> <span class="n">logstep</span>  <span class="c1"># prevent nan with 1e-10</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq</span> <span class="o">&gt;</span> <span class="n">min_log_hz</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">mels</span> <span class="o">=</span> <span class="n">target</span> <span class="o">*</span> <span class="n">mask</span> <span class="o">+</span> <span class="n">mels</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="o">-</span> <span class="n">mask</span><span class="p">)</span>  <span class="c1"># will replace by masked_fill OP in future</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">freq</span> <span class="o">&gt;=</span> <span class="n">min_log_hz</span><span class="p">:</span>
+            <span class="n">mels</span> <span class="o">=</span> <span class="n">min_log_mel</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">freq</span> <span class="o">/</span> <span class="n">min_log_hz</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="o">/</span> <span class="n">logstep</span>
+
+    <span class="k">return</span> <span class="n">mels</span></div>
+
+
+<div class="viewcode-block" id="mel_to_hz"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.mel_to_hz">[docs]</a><span class="k">def</span> <span class="nf">mel_to_hz</span><span class="p">(</span><span class="n">mel</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+              <span class="n">htk</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert mel bin numbers to frequencies.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mel (Union[float, Tensor]): The mel frequency represented as a tensor with arbitrary shape.</span>
+<span class="sd">        htk (bool, optional): Use htk scaling. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[float, Tensor]: Frequencies in Hz.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">htk</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">700.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">10.0</span><span class="o">**</span><span class="p">(</span><span class="n">mel</span> <span class="o">/</span> <span class="mf">2595.0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">f_min</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">f_sp</span> <span class="o">=</span> <span class="mf">200.0</span> <span class="o">/</span> <span class="mi">3</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">f_min</span> <span class="o">+</span> <span class="n">f_sp</span> <span class="o">*</span> <span class="n">mel</span>
+    <span class="c1"># And now the nonlinear scale</span>
+    <span class="n">min_log_hz</span> <span class="o">=</span> <span class="mf">1000.0</span>  <span class="c1"># beginning of log region (Hz)</span>
+    <span class="n">min_log_mel</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_log_hz</span> <span class="o">-</span> <span class="n">f_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">f_sp</span>  <span class="c1"># same (Mels)</span>
+    <span class="n">logstep</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">6.4</span><span class="p">)</span> <span class="o">/</span> <span class="mf">27.0</span>  <span class="c1"># step size for log region</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mel</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">min_log_hz</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logstep</span> <span class="o">*</span> <span class="p">(</span><span class="n">mel</span> <span class="o">-</span> <span class="n">min_log_mel</span><span class="p">))</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">mel</span> <span class="o">&gt;</span> <span class="n">min_log_mel</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">mel</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">freqs</span> <span class="o">=</span> <span class="n">target</span> <span class="o">*</span> <span class="n">mask</span> <span class="o">+</span> <span class="n">freqs</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="o">-</span> <span class="n">mask</span><span class="p">)</span>  <span class="c1"># will replace by masked_fill OP in future</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mel</span> <span class="o">&gt;=</span> <span class="n">min_log_mel</span><span class="p">:</span>
+            <span class="n">freqs</span> <span class="o">=</span> <span class="n">min_log_hz</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logstep</span> <span class="o">*</span> <span class="p">(</span><span class="n">mel</span> <span class="o">-</span> <span class="n">min_log_mel</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">freqs</span></div>
+
+
+<div class="viewcode-block" id="mel_frequencies"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.mel_frequencies">[docs]</a><span class="k">def</span> <span class="nf">mel_frequencies</span><span class="p">(</span><span class="n">n_mels</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                    <span class="n">f_min</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="n">f_max</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">11025.0</span><span class="p">,</span>
+                    <span class="n">htk</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute mel frequencies.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_mels (int, optional): Number of mel bins. Defaults to 64.</span>
+<span class="sd">        f_min (float, optional): Minimum frequency in Hz. Defaults to 0.0.</span>
+<span class="sd">        fmax (float, optional): Maximum frequency in Hz. Defaults to 11025.0.</span>
+<span class="sd">        htk (bool, optional): Use htk scaling. Defaults to False.</span>
+<span class="sd">        dtype (str, optional): The data type of the return frequencies. Defaults to &#39;float32&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Tensor of n_mels frequencies in Hz with shape `(n_mels,)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># &#39;Center freqs&#39; of mel bands - uniformly spaced between limits</span>
+    <span class="n">min_mel</span> <span class="o">=</span> <span class="n">hz_to_mel</span><span class="p">(</span><span class="n">f_min</span><span class="p">,</span> <span class="n">htk</span><span class="o">=</span><span class="n">htk</span><span class="p">)</span>
+    <span class="n">max_mel</span> <span class="o">=</span> <span class="n">hz_to_mel</span><span class="p">(</span><span class="n">f_max</span><span class="p">,</span> <span class="n">htk</span><span class="o">=</span><span class="n">htk</span><span class="p">)</span>
+    <span class="n">mels</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_mel</span><span class="p">,</span> <span class="n">max_mel</span><span class="p">,</span> <span class="n">n_mels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">mel_to_hz</span><span class="p">(</span><span class="n">mels</span><span class="p">,</span> <span class="n">htk</span><span class="o">=</span><span class="n">htk</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">freqs</span></div>
+
+
+<div class="viewcode-block" id="fft_frequencies"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.fft_frequencies">[docs]</a><span class="k">def</span> <span class="nf">fft_frequencies</span><span class="p">(</span><span class="n">sr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_fft</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute fourier frequencies.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sr (int): Sample rate.</span>
+<span class="sd">        n_fft (int): Number of fft bins.</span>
+<span class="sd">        dtype (str, optional): The data type of the return frequencies. Defaults to &#39;float32&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: FFT frequencies in Hz with shape `(n_fft//2 + 1,)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">paddle</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">sr</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">n_fft</span> <span class="o">//</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compute_fbank_matrix"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.compute_fbank_matrix">[docs]</a><span class="k">def</span> <span class="nf">compute_fbank_matrix</span><span class="p">(</span><span class="n">sr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                         <span class="n">n_fft</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                         <span class="n">n_mels</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                         <span class="n">f_min</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                         <span class="n">f_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">htk</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">norm</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;slaney&#39;</span><span class="p">,</span>
+                         <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute fbank matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sr (int): Sample rate.</span>
+<span class="sd">        n_fft (int): Number of fft bins.</span>
+<span class="sd">        n_mels (int, optional): Number of mel bins. Defaults to 64.</span>
+<span class="sd">        f_min (float, optional): Minimum frequency in Hz. Defaults to 0.0.</span>
+<span class="sd">        f_max (Optional[float], optional): Maximum frequency in Hz. Defaults to None.</span>
+<span class="sd">        htk (bool, optional): Use htk scaling. Defaults to False.</span>
+<span class="sd">        norm (Union[str, float], optional): Type of normalization. Defaults to &#39;slaney&#39;.</span>
+<span class="sd">        dtype (str, optional): The data type of the return matrix. Defaults to &#39;float32&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Mel transform matrix with shape `(n_mels, n_fft//2 + 1)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">f_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">f_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sr</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="c1"># Initialize the weights</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_mels</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">n_fft</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="c1"># Center freqs of each FFT bin</span>
+    <span class="n">fftfreqs</span> <span class="o">=</span> <span class="n">fft_frequencies</span><span class="p">(</span><span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">,</span> <span class="n">n_fft</span><span class="o">=</span><span class="n">n_fft</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="c1"># &#39;Center freqs&#39; of mel bands - uniformly spaced between limits</span>
+    <span class="n">mel_f</span> <span class="o">=</span> <span class="n">mel_frequencies</span><span class="p">(</span>
+        <span class="n">n_mels</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span> <span class="n">htk</span><span class="o">=</span><span class="n">htk</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">fdiff</span> <span class="o">=</span> <span class="n">mel_f</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">mel_f</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1">#np.diff(mel_f)</span>
+    <span class="n">ramps</span> <span class="o">=</span> <span class="n">mel_f</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">fftfreqs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1">#ramps = np.subtract.outer(mel_f, fftfreqs)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_mels</span><span class="p">):</span>
+        <span class="c1"># lower and upper slopes for all bins</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="n">ramps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">fdiff</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">ramps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">fdiff</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># .. then intersect them with each other and zero</span>
+        <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="n">paddle</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">lower</span><span class="p">),</span> <span class="n">paddle</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">))</span>
+
+    <span class="c1"># Slaney-style mel is scaled to be approx constant energy per channel</span>
+    <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="s1">&#39;slaney&#39;</span><span class="p">:</span>
+        <span class="n">enorm</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">mel_f</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="n">n_mels</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">mel_f</span><span class="p">[:</span><span class="n">n_mels</span><span class="p">])</span>
+        <span class="n">weights</span> <span class="o">*=</span> <span class="n">enorm</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">weights</span></div>
+
+
+<div class="viewcode-block" id="power_to_db"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.power_to_db">[docs]</a><span class="k">def</span> <span class="nf">power_to_db</span><span class="p">(</span><span class="n">spect</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+                <span class="n">ref_value</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                <span class="n">amin</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
+                <span class="n">top_db</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Convert a power spectrogram (amplitude squared) to decibel (dB) units. The function computes the scaling `10 * log10(x / ref)` in a numerically stable way.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spect (Tensor): STFT power spectrogram.</span>
+<span class="sd">        ref_value (float, optional): The reference value. If smaller than 1.0, the db level of the signal will be pulled up accordingly. Otherwise, the db level is pushed down. Defaults to 1.0.</span>
+<span class="sd">        amin (float, optional): Minimum threshold. Defaults to 1e-10.</span>
+<span class="sd">        top_db (Optional[float], optional): Threshold the output at `top_db` below the peak. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Power spectrogram in db scale.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">amin</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;amin must be strictly positive&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ref_value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ref_value must be strictly positive&quot;</span><span class="p">)</span>
+
+    <span class="n">ones</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">spect</span><span class="p">)</span>
+    <span class="n">log_spec</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">paddle</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">paddle</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">ones</span> <span class="o">*</span> <span class="n">amin</span><span class="p">,</span> <span class="n">spect</span><span class="p">))</span>
+    <span class="n">log_spec</span> <span class="o">-=</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ref_value</span><span class="p">,</span> <span class="n">amin</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">top_db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">top_db</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;top_db must be non-negative&quot;</span><span class="p">)</span>
+        <span class="n">log_spec</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">log_spec</span><span class="p">,</span> <span class="n">ones</span> <span class="o">*</span> <span class="p">(</span><span class="n">log_spec</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">top_db</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">log_spec</span></div>
+
+
+<div class="viewcode-block" id="create_dct"><a class="viewcode-back" href="../../../paddleaudio.functional.html#paddleaudio.functional.functional.create_dct">[docs]</a><span class="k">def</span> <span class="nf">create_dct</span><span class="p">(</span><span class="n">n_mfcc</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+               <span class="n">n_mels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+               <span class="n">norm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">,</span>
+               <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Create a discrete cosine transform(DCT) matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_mfcc (int): Number of mel frequency cepstral coefficients. </span>
+<span class="sd">        n_mels (int): Number of mel filterbanks.</span>
+<span class="sd">        norm (Optional[str], optional): Normalizaiton type. Defaults to &#39;ortho&#39;.</span>
+<span class="sd">        dtype (str, optional): The data type of the return matrix. Defaults to &#39;float32&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: The DCT matrix with shape `(n_mels, n_mfcc)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_mels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_mfcc</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">dct</span> <span class="o">=</span> <span class="n">paddle</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_mels</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
+                     <span class="n">k</span><span class="p">)</span>  <span class="c1"># size (n_mfcc, n_mels)</span>
+    <span class="k">if</span> <span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dct</span> <span class="o">*=</span> <span class="mf">2.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;ortho&quot;</span>
+        <span class="n">dct</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">dct</span> <span class="o">*=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_mels</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dct</span><span class="o">.</span><span class="n">T</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, PaddlePaddle.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

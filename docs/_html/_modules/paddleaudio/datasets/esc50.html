@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paddleaudio.datasets.esc50 &mdash; PaddleAudio 0.2.0 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PaddleAudio<img src="../../../_static/paddle.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../paddleaudio.html">paddleaudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PaddleAudio</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>paddleaudio.datasets.esc50</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paddleaudio.datasets.esc50</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">..utils.download</span> <span class="kn">import</span> <span class="n">download_and_decompress</span>
+<span class="kn">from</span> <span class="nn">..utils.env</span> <span class="kn">import</span> <span class="n">DATA_HOME</span>
+<span class="kn">from</span> <span class="nn">.dataset</span> <span class="kn">import</span> <span class="n">AudioClassificationDataset</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ESC50&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="ESC50"><a class="viewcode-back" href="../../../paddleaudio.datasets.html#paddleaudio.datasets.esc50.ESC50">[docs]</a><span class="k">class</span> <span class="nc">ESC50</span><span class="p">(</span><span class="n">AudioClassificationDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The ESC-50 dataset is a labeled collection of 2000 environmental audio recordings</span>
+<span class="sd">    suitable for benchmarking methods of environmental sound classification. The dataset</span>
+<span class="sd">    consists of 5-second-long recordings organized into 50 semantical classes (with</span>
+<span class="sd">    40 examples per class)</span>
+
+<span class="sd">    Reference:</span>
+<span class="sd">        ESC: Dataset for Environmental Sound Classification</span>
+<span class="sd">        http://dx.doi.org/10.1145/2733373.2806390</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">archieves</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span>
+            <span class="s1">&#39;https://paddleaudio.bj.bcebos.com/datasets/ESC-50-master.zip&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;md5&#39;</span><span class="p">:</span> <span class="s1">&#39;7771e4b9d86d0945acce719c7a59305a&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+    <span class="n">label_list</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="c1"># Animals</span>
+        <span class="s1">&#39;Dog&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Rooster&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Pig&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Cow&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Frog&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Cat&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Hen&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Insects (flying)&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Sheep&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Crow&#39;</span><span class="p">,</span>
+        <span class="c1"># Natural soundscapes &amp; water sounds</span>
+        <span class="s1">&#39;Rain&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Sea waves&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Crackling fire&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Crickets&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Chirping birds&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Water drops&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Wind&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Pouring water&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Toilet flush&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Thunderstorm&#39;</span><span class="p">,</span>
+        <span class="c1"># Human, non-speech sounds</span>
+        <span class="s1">&#39;Crying baby&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Sneezing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Clapping&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Breathing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Coughing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Footsteps&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Laughing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Brushing teeth&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Snoring&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Drinking, sipping&#39;</span><span class="p">,</span>
+        <span class="c1"># Interior/domestic sounds</span>
+        <span class="s1">&#39;Door knock&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Mouse click&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Keyboard typing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Door, wood creaks&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Can opening&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Washing machine&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Vacuum cleaner&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Clock alarm&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Clock tick&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Glass breaking&#39;</span><span class="p">,</span>
+        <span class="c1"># Exterior/urban noises</span>
+        <span class="s1">&#39;Helicopter&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Chainsaw&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Siren&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Car horn&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Engine&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Train&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Church bells&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Airplane&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Fireworks&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Hand saw&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;ESC-50-master&#39;</span><span class="p">,</span> <span class="s1">&#39;meta&#39;</span><span class="p">,</span> <span class="s1">&#39;esc50.csv&#39;</span><span class="p">)</span>
+    <span class="n">meta_info</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s1">&#39;META_INFO&#39;</span><span class="p">,</span>
+        <span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;fold&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;esc10&#39;</span><span class="p">,</span> <span class="s1">&#39;src_file&#39;</span><span class="p">,</span> <span class="s1">&#39;take&#39;</span><span class="p">))</span>
+    <span class="n">audio_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;ESC-50-master&#39;</span><span class="p">,</span> <span class="s1">&#39;audio&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span>
+                 <span class="n">split</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">feat_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ags:</span>
+<span class="sd">            mode (:obj:`str`, `optional`, defaults to `train`):</span>
+<span class="sd">                It identifies the dataset mode (train or dev).</span>
+<span class="sd">            split (:obj:`int`, `optional`, defaults to 1):</span>
+<span class="sd">                It specify the fold of dev dataset.</span>
+<span class="sd">            feat_type (:obj:`str`, `optional`, defaults to `raw`):</span>
+<span class="sd">                It identifies the feature type that user wants to extrace of an audio file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">files</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ESC50</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">feat_type</span><span class="o">=</span><span class="n">feat_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_meta_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">]:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_HOME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rf</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">rf</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta_info</span><span class="p">(</span><span class="o">*</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">_get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_HOME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_path</span><span class="p">))</span> <span class="ow">or</span> \
+            <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_HOME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">)):</span>
+            <span class="n">download_and_decompress</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archieves</span><span class="p">,</span> <span class="n">DATA_HOME</span><span class="p">)</span>
+
+        <span class="n">meta_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_meta_info</span><span class="p">()</span>
+
+        <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">meta_info</span><span class="p">:</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">fold</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sample</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span> <span class="o">!=</span> <span class="n">split</span><span class="p">:</span>
+                <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_HOME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;train&#39;</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span> <span class="o">==</span> <span class="n">split</span><span class="p">:</span>
+                <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_HOME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">files</span><span class="p">,</span> <span class="n">labels</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, PaddlePaddle.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

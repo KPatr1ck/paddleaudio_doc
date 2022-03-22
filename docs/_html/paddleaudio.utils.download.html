@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paddleaudio.utils.download &mdash; PaddleAudio 0.2.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="paddleaudio.utils.env" href="paddleaudio.utils.env.html" />
+    <link rel="prev" title="paddleaudio.utils" href="paddleaudio.utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PaddleAudio
+            <img src="_static/paddle.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Index</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="paddleaudio.html">paddleaudio</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.backends.html">paddleaudio.backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.compliance.html">paddleaudio.compliance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.datasets.html">paddleaudio.datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.features.html">paddleaudio.features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.functional.html">paddleaudio.functional</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.io.html">paddleaudio.io</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.metric.html">paddleaudio.metric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="paddleaudio.sox_effects.html">paddleaudio.sox_effects</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="paddleaudio.utils.html">paddleaudio.utils</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">paddleaudio.utils.download</a></li>
+<li class="toctree-l3"><a class="reference internal" href="paddleaudio.utils.env.html">paddleaudio.utils.env</a></li>
+<li class="toctree-l3"><a class="reference internal" href="paddleaudio.utils.error.html">paddleaudio.utils.error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="paddleaudio.utils.log.html">paddleaudio.utils.log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="paddleaudio.utils.time.html">paddleaudio.utils.time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PaddleAudio</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="paddleaudio.html">paddleaudio</a> &raquo;</li>
+          <li><a href="paddleaudio.utils.html">paddleaudio.utils</a> &raquo;</li>
+      <li>paddleaudio.utils.download</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/paddleaudio.utils.download.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-paddleaudio.utils.download">
+<span id="paddleaudio-utils-download"></span><h1>paddleaudio.utils.download<a class="headerlink" href="#module-paddleaudio.utils.download" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="paddleaudio.utils.download.decompress">
+<span class="sig-prename descclassname"><span class="pre">paddleaudio.utils.download.</span></span><span class="sig-name descname"><span class="pre">decompress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paddleaudio/utils/download.html#decompress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paddleaudio.utils.download.decompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts all files from a compressed file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="paddleaudio.utils.download.download_and_decompress">
+<span class="sig-prename descclassname"><span class="pre">paddleaudio.utils.download.</span></span><span class="sig-name descname"><span class="pre">download_and_decompress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">archives</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paddleaudio/utils/download.html#download_and_decompress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paddleaudio.utils.download.download_and_decompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download archieves and decompress to specific path.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="paddleaudio.utils.download.load_state_dict_from_url">
+<span class="sig-prename descclassname"><span class="pre">paddleaudio.utils.download.</span></span><span class="sig-name descname"><span class="pre">load_state_dict_from_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">md5</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paddleaudio/utils/download.html#load_state_dict_from_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paddleaudio.utils.download.load_state_dict_from_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and load a state dict from url</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="paddleaudio.utils.html" class="btn btn-neutral float-left" title="paddleaudio.utils" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="paddleaudio.utils.env.html" class="btn btn-neutral float-right" title="paddleaudio.utils.env" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, PaddlePaddle.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
