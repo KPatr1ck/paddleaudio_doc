@@ -5,6 +5,5 @@ scipy
 setuptools
 docutils
 resampy
-soundfile
 colorlog
 paddlepaddle

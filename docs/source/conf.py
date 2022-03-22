@@ -47,7 +47,7 @@ extensions = [
 ]
 
 napoleon_google_docstring = True
-autodoc_mock_imports = ['dtaidistance', 'mcd', 'librosa']
+autodoc_mock_imports = ['dtaidistance', 'mcd', 'librosa', 'soundfile']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
