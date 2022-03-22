@@ -7,7 +7,5 @@ docutils
 resampy
 soundfile
 colorlog
-dtaidistance
-mcd
 librosa
 paddlepaddle
